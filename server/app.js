@@ -4,6 +4,8 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import authRoutes from './routes/auth.routes.js';
+import errorHandler from './middleware/error.middleware.js';
 
 dotenv.config();
 
@@ -22,8 +24,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'FreePlan API is running' });
 });
 
-// Routes (à brancher au fur et à mesure)
-// import authRoutes from './routes/auth.routes.js';
-// app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
+
+app.use(errorHandler);
 
 export default app;
