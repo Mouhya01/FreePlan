@@ -8,6 +8,8 @@ import authRoutes from './routes/auth.routes.js';
 import errorHandler from './middleware/error.middleware.js';
 import projectRoutes from './routes/project.routes.js';
 import taskRoutes from './routes/task.routes.js';
+import clientRoutes from './routes/client.routes.js';
+import statsRoutes from './routes/stats.routes.js';
 
 dotenv.config();
 
@@ -29,6 +31,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/projects/:projectId/tasks', taskRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/stats', statsRoutes);
 
 app.use(errorHandler);
 

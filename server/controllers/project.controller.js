@@ -15,7 +15,8 @@ export const getProjects = async (req, res, next) => {
       Project.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(Number(limit)),
+        .limit(Number(limit))
+        .populate('client', 'name email company'),
       Project.countDocuments(filter),
     ]);
 
