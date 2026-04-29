@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { AuthContext } from './authContext';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import api from '@/api/axios';
+
+// Context defined and exported from the same file
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -9,7 +12,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const restoreSession = async () => {
       const token = localStorage.getItem('token');
-      if (!token) { setLoading(false); return; }
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
         const { data } = await api.get('/auth/me');
         setUser(data.user);

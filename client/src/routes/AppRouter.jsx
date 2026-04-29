@@ -1,22 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/context/AuthContext.jsx';
-import PrivateRoute from './PrivateRoute.jsx';
-import MainLayout from '../components/layout/MainLayout.jsx';
-import LoginPage from '../pages/LoginPage.jsx';
-import RegisterPage from '../pages/RegisterPage.jsx';
-import DashboardPage from '../pages/DashboardPage.jsx';
-
+import { AuthProvider } from '@/context/AuthContext';
+import PrivateRoute from './PrivateRoute';
+import MainLayout from '@/components/layout/MainLayout';
+import LoginPage from '@/pages/LoginPage';
+import RegisterPage from '@/pages/RegisterPage';
+import DashboardPage from '@/pages/DashboardPage';
+import ProjectsPage from '@/pages/ProjectsPage';
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-
-          {/* Private routes — wrapped in layout */}
           <Route
             path="/"
             element={
@@ -27,10 +24,8 @@ const AppRouter = () => {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
-            {/* More pages will be added in Day 5 */}
+            <Route path="projects" element={<ProjectsPage />} />
           </Route>
-
-          {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AuthProvider>
