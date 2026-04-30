@@ -6,6 +6,9 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ProjectsPage from '@/pages/ProjectsPage';
+import ClientsPage from '@/pages/ClientsPage';
+import InvoicesPage from '@/pages/InvoicesPage';
+import SettingsPage from '@/pages/SettingsPage';
 
 const AppRouter = () => {
   return (
@@ -25,6 +28,9 @@ const AppRouter = () => {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="projects" element={<ProjectsPage />} />
+            <Route path="clients" element={<ClientsPage />} />
+            <Route path="invoices" element={<InvoicesPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
