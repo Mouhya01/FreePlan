@@ -3,8 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, FileText, X, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { useInvoices, useCreateInvoice } from '@/hooks/useInvoices';
+import {
+  Plus,
+  FileText,
+  X,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Trash2,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import {
+  useInvoices,
+  useCreateInvoice,
+  useUpdateInvoice,
+  useDeleteInvoice,
+} from '@/hooks/useInvoices';
 import { useClients } from '@/hooks/useClients';
 import PageHeader from '@/components/ui/PageHeader';
 import EmptyState from '@/components/ui/EmptyState';
@@ -12,7 +26,13 @@ import SkeletonCard from '@/components/ui/SkeletonCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import toast from 'react-hot-toast';
+
+// Status configuration
+const statusConfig = {
+  draft: { label: 'Draft', color: '#8b88f8', bg: '#8b88f820', icon: Clock },
+  sent: { label: 'Sent', color: '#f59e0b', bg: '#f59e0b20', icon: AlertCircle },
+  paid: { label: 'Paid', color: '#10b981', bg: '#10b98120', icon: CheckCircle },
+};
 
 const invoiceSchema = z.object({
   title: z.string().min(2, 'Title is required'),
@@ -22,27 +42,7 @@ const invoiceSchema = z.object({
   status: z.enum(['draft', 'sent', 'paid']),
 });
 
-const statusConfig = {
-  draft: {
-    label: 'Draft',
-    color: '#8b88f8',
-    bg: '#8b88f820',
-    icon: Clock,
-  },
-  sent: {
-    label: 'Sent',
-    color: '#f59e0b',
-    bg: '#f59e0b20',
-    icon: AlertCircle,
-  },
-  paid: {
-    label: 'Paid',
-    color: '#10b981',
-    bg: '#10b98120',
-    icon: CheckCircle,
-  },
-};
-
+// Modal for creating a new invoice
 const InvoiceModal = ({ onClose }) => {
   const { mutateAsync: create, isPending } = useCreateInvoice();
   const { data: clientsData } = useClients();
@@ -59,11 +59,11 @@ const InvoiceModal = ({ onClose }) => {
 
   const onSubmit = async (formData) => {
     try {
-      await create(formData);
+      await create({ ...formData, client: formData.clientId });
       toast.success('Invoice created!');
       onClose();
     } catch {
-      toast.error('Failed to create invoice — API coming in Day 7');
+      toast.error('Failed to create invoice');
     }
   };
 
@@ -182,16 +182,42 @@ const InvoiceModal = ({ onClose }) => {
   );
 };
 
+// Single invoice row with status cycle and delete
 const InvoiceRow = ({ invoice, index }) => {
+  const { mutateAsync: deleteInvoice } = useDeleteInvoice();
+  const { mutateAsync: updateInvoice } = useUpdateInvoice();
   const config = statusConfig[invoice.status] ?? statusConfig.draft;
   const StatusIcon = config.icon;
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete "${invoice.title}"?`)) return;
+    try {
+      await deleteInvoice(invoice._id);
+      toast.success('Invoice deleted');
+    } catch {
+      toast.error('Failed to delete invoice');
+    }
+  };
+
+  const cycleStatus = async () => {
+    const next = { draft: 'sent', sent: 'paid', paid: 'draft' };
+    try {
+      await updateInvoice({
+        id: invoice._id,
+        updates: { status: next[invoice.status] },
+      });
+      toast.success(`Status → ${next[invoice.status]}`);
+    } catch {
+      toast.error('Failed to update status');
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06 }}
-      className="flex items-center justify-between rounded-xl border border-white/5 bg-surface-dark-secondary px-5 py-4"
+      className="group flex items-center justify-between rounded-xl border border-white/5 bg-surface-dark-secondary px-5 py-4"
     >
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500/10">
@@ -200,7 +226,9 @@ const InvoiceRow = ({ invoice, index }) => {
         <div>
           <p className="text-sm font-medium text-white">{invoice.title}</p>
           <p className="text-xs text-white/30">
-            Due {new Date(invoice.dueDate).toLocaleDateString('en-US', {
+            {invoice.client?.name ?? 'Unknown client'} ·{' '}
+            Due{' '}
+            {new Date(invoice.dueDate).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
               year: 'numeric',
@@ -209,28 +237,38 @@ const InvoiceRow = ({ invoice, index }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <span className="text-sm font-semibold text-white">
           ${Number(invoice.amount).toLocaleString()}
         </span>
-        <span
-          className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+
+        <button
+          onClick={cycleStatus}
+          className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-opacity hover:opacity-70"
           style={{ color: config.color, backgroundColor: config.bg }}
+          title="Click to change status"
         >
           <StatusIcon size={11} />
           {config.label}
-        </span>
+        </button>
+
+        <button
+          onClick={handleDelete}
+          className="rounded-lg p-1.5 text-white/0 transition-colors group-hover:text-white/30 hover:text-red-400"
+        >
+          <Trash2 size={14} />
+        </button>
       </div>
     </motion.div>
   );
 };
 
+// Main page component
 const InvoicesPage = () => {
   const { data, isLoading } = useInvoices();
   const [showCreate, setShowCreate] = useState(false);
   const invoices = data?.data ?? [];
 
-  // Summary totals
   const totalPaid = invoices
     .filter((i) => i.status === 'paid')
     .reduce((sum, i) => sum + Number(i.amount), 0);
@@ -259,13 +297,13 @@ const InvoicesPage = () => {
         }
       />
 
-      {/* Summary cards */}
+      {/* Summary cards — only shown when invoices exist */}
       {invoices.length > 0 && (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           {[
-            { label: 'Total Paid', value: totalPaid, color: '#10b981' },
-            { label: 'Total Pending', value: totalPending, color: '#f59e0b' },
-            { label: 'Total Invoices', value: invoices.length, color: '#8b88f8', isCount: true },
+            { label: 'Total Paid', value: `$${totalPaid.toLocaleString()}`, color: '#10b981' },
+            { label: 'Total Pending', value: `$${totalPending.toLocaleString()}`, color: '#f59e0b' },
+            { label: 'Total Invoices', value: invoices.length, color: '#8b88f8' },
           ].map((item) => (
             <motion.div
               key={item.label}
@@ -274,11 +312,7 @@ const InvoicesPage = () => {
               className="rounded-2xl border border-white/5 bg-surface-dark-secondary p-4"
             >
               <p className="text-xs text-white/40">{item.label}</p>
-              <p className="mt-1 text-xl font-semibold text-white">
-                {item.isCount
-                  ? item.value
-                  : `$${item.value.toLocaleString()}`}
-              </p>
+              <p className="mt-1 text-xl font-semibold text-white">{item.value}</p>
             </motion.div>
           ))}
         </div>

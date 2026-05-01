@@ -11,9 +11,8 @@ export const useInvoices = () => {
     queryKey: ['invoices'],
     queryFn: fetchInvoices,
     staleTime: 1000 * 60 * 2,
-    // Return empty array if endpoint doesn't exist yet
-    retry: false,
-    placeholderData: { data: [] },
+    retry: 3,
+    retryDelay: (attempt)=> attempt*1000,
   });
 };
 

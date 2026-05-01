@@ -11,6 +11,8 @@ const useStats = () => {
     queryKey: ['stats'],
     queryFn: fetchStats,
     staleTime: 1000 * 60 * 2,
+    retry: 3,
+    retryDelay: (attempt)=> attempt*1000,
   });
 };
 
